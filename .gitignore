@@ -67,3 +67,14 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+#venv
+g34
+
+#Firebase configuration json file
+travelappbd-8e204-firebase-adminsdk-fbsvc-f63d15f26c.json
+firebase/*.json
+firebase/serviceAccountKey.json
+
+#prueba.html
+prueba.html

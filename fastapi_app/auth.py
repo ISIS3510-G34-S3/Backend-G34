@@ -1,17 +1,12 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import firebase_admin
-from firebase_admin import auth as firebase_auth, credentials
+from firebase_admin import auth as firebase_auth
 import google.auth.exceptions
 
 from typing import Dict
 
-# Initialize Firebase Admin (only once)
-try:
-    firebase_admin.get_app()
-except ValueError:
-    cred = credentials.Certificate("firebase/serviceAccountKey.json")  # download from Firebase Console
-    firebase_admin.initialize_app(cred)
+# Ensure firebase app is initialized by importing the initializer
+from fastapi_app.firebase_app import firebase_app  # noqa: F401  (import side-effect)
 
 security = HTTPBearer()
 
@@ -26,4 +21,21 @@ async def verify_firebase_token(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid auth token: {str(e)}",
+        )
+
+
+async def verify_session_cookie(request: Request) -> Dict:
+    session_cookie = request.cookies.get("session")
+    if not session_cookie:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing session cookie",
+        )
+    try:
+        decoded_claims = firebase_auth.verify_session_cookie(session_cookie, check_revoked=True)
+        return decoded_claims
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid session: {str(e)}",
         )
